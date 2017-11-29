@@ -1,0 +1,17 @@
+{
+    "name": "linguistic/ngramextractor",
+    "type": "library",
+    "license": "GPL3",
+    "description": "Extracts ngrams from a given text and does linguistic pre-processing like stopword removal",
+    "require-dev": {
+        "phpunit/phpunit": "^6.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "linguistic\\NGramExtractor\\": "src"
+        }
+    },
+    "authors": [{
+        "name": "Mark Schatz"
+    }]
+}
