@@ -2,31 +2,31 @@
 
 namespace linguistic\NGramExtractor;
 
-class WordTokenizer implements TokenizerInterface
+class Tokenizer
 {
     protected $removalRules = array();
     protected $seperator;
 
-    public function tokenize(string $text): array
+    public function tokenize($text)
     {
         foreach ($this->removalRules as $rule) {
-            $text = preg_replace($rule, '', $text);
+            $text = preg_replace($rule, ' ', $text);
         }
         return preg_split($this->seperator, $text, null, PREG_SPLIT_NO_EMPTY);
     }
 
-    public function addRemovalRule(string $rule): WordTokenizer
+    public function addRemovalRule($rule)
     {
         $this->removalRules[] = $rule;
         return $this;
     }
 
-    public function getRemovalRules(): array
+    public function getRemovalRules()
     {
         return $this->removalRules;
     }
 
-    public function setSeperator(string $seperator): WordTokenizer
+    public function setSeperator($seperator)
     {
         $this->seperator = $seperator;
         return $this;

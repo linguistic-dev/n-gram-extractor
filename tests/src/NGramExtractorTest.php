@@ -1,7 +1,7 @@
 <?php
 
 use linguistic\NGramExtractor\NGramExtractor;
-use linguistic\NGramExtractor\WordTokenizer;
+use linguistic\NGramExtractor\Tokenizer;
 
 class NGramExtractorTest extends \PHPUnit\Framework\TestCase
 {
@@ -11,7 +11,7 @@ class NGramExtractorTest extends \PHPUnit\Framework\TestCase
     public function setUp()
     {
         // set up WordTokenizer
-        $tokenizer = new WordTokenizer();
+        $tokenizer = new Tokenizer();
         $tokenizer->setSeperator('/\s+/');
         // instantiate a extractor object
         $this->extractor = new NGramExtractor("abc abc def ghi jkl mno pqr");
@@ -30,6 +30,15 @@ class NGramExtractorTest extends \PHPUnit\Framework\TestCase
         self::assertEquals($expected_3, $this->extractor->getNGram(3));
     }
 
+    public function testRemoveStopwords()
+    {
+        $this->extractor->setStopwords(array("abc"));
+        self::assertFalse(in_array("abc", $this->extractor->getNGramClean(1)));
+
+        $this->extractor->setStopwords(array("abc abc"));
+        self::assertTrue(in_array("abc abc", $this->extractor->getNGram(2)));
+    }
+
     public function testGetNGramUnique()
     {
         $expected = array("abc", "def", "ghi", "jkl", "mno", "pqr");
@@ -41,6 +50,12 @@ class NGramExtractorTest extends \PHPUnit\Framework\TestCase
         self::assertEquals(7, $this->extractor->getNGramWordcount(1));
         self::assertEquals(6, $this->extractor->getNGramWordcount(1, true));
         self::assertEquals(0, $this->extractor->getNGramWordcount(8));
+    }
+
+    public function testGetNGramUniqueCount()
+    {
+        $nGram = $this->extractor->getNGramUniqueWithCount(1);
+        self::assertEquals(2, $nGram['abc']);
     }
 
 }

@@ -1,8 +1,8 @@
 <?php
 
-use linguistic\NGramExtractor\WordTokenizer;
+use linguistic\NGramExtractor\Tokenizer;
 
-class WordTokenizerTest extends \PHPUnit\Framework\TestCase
+class TokenizerTest extends \PHPUnit\Framework\TestCase
 {
 
     private $tokenizer;
@@ -11,7 +11,7 @@ class WordTokenizerTest extends \PHPUnit\Framework\TestCase
     public function setUp()
     {
         // instantiate a creator object
-        $this->tokenizer = new WordTokenizer();
+        $this->tokenizer = new Tokenizer();
 
         //some basic removal rule for test usage, should remove the 'x' char
         $this->tokenizer->addRemovalRule('/x/');

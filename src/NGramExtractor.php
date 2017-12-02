@@ -2,56 +2,93 @@
 
 namespace linguistic\NGramExtractor;
 
-use linguistic\NGramExtractor\TokenizerInterface;
+use linguistic\NGramExtractor\Tokenizer;
 
 class NGramExtractor
 {
     private $text;
-    private $nGrams    = array();
-    private $stopwords = array();
+    private $tokenizedText;
+    private $nGrams      = array();
+    private $nGramsClean = array();
+    private $stopwords   = array();
     private $tokenizer;
 
-    public function __construct(string $text)
+    public function __construct($text)
     {
-        $this->text = $text;
+        $this->text = mb_strtolower($text);
     }
 
-    public function setStopwords(array $stopwords): NGramExtractor
+    public function setStopwords($stopwords)
     {
         $this->stopwords = $stopwords;
         return $this;
     }
 
-    public function getStopwords(): array
+    public function getStopwords()
     {
         return $this->stopwords;
     }
 
-    public function setTokenizer(TokenizerInterface $tokenizer): NGramExtractor
+    public function setTokenizer(Tokenizer $tokenizer)
     {
         $this->tokenizer = $tokenizer;
         return $this;
     }
 
-    public function getNGram(int $n): array
+    public function getNGram($n)
     {
         if (!array_key_exists($n, $this->nGrams)) {
-            $this->setNGram($n);
+            $token            = $this->getTokenizedText();
+            $this->nGrams[$n] = $this->createNGram($n, $token);
         }
         return $this->nGrams[$n];
     }
 
-    public function getNGramUnique(int $n): array
+    public function getNGramClean($n)
+    {
+        if (!array_key_exists($n, $this->nGramsClean)) {
+            $token                 = $this->getTokenizedText();
+            $cleaned               = array_values(array_diff($token, $this->stopwords));
+            $this->nGramsClean[$n] = $this->createNGram($n, $cleaned);
+        }
+        return $this->nGramsClean[$n];
+    }
+
+    public function getNGramUnique($n)
     {
         $nGrams = $this->getNGram($n);
         $unique = array_unique($nGrams);
         return array_values($unique);
     }
 
-    private function setNGram(int $n)
+    public function getNGramUniqueWithCount($n)
+    {
+        // echo "halli hallo";
+        $nGrams        = $this->getNGram($n);
+        $nGramsCounted = array_count_values($nGrams);
+        arsort($nGramsCounted);
+        return $nGramsCounted;
+    }
+
+    public function getNGramUniqueWithCountClean($n)
+    {
+        $nGrams        = $this->getNGramClean($n);
+        $nGramsCounted = array_count_values($nGrams);
+        arsort($nGramsCounted);
+        return $nGramsCounted;
+    }
+
+    public function getTokenizedText()
+    {
+        if (!$this->tokenizedText) {
+            $this->tokenizedText = $this->tokenizer->tokenize($this->text);
+        }
+        return $this->tokenizedText;
+    }
+
+    private function createNGram($n, $token)
     {
         $nGrams  = array();
-        $token   = $this->tokenizer->tokenize($this->text);
         $counter = 0;
         while (($counter + ($n - 1)) < count($token)) {
             $nGram = "";
@@ -64,20 +101,14 @@ class NGramExtractor
             $nGrams[] = $nGram;
             $counter++;
         }
-        $this->nGrams[$n] = $nGrams;
+        return $nGrams;
     }
 
-    public function getNGramWordcount(int $n, bool $unique = false): int
+    public function getNGramWordcount($n, $unique = false)
     {
         if ($unique) {
-            $nGrams = $this->getNGramUnique($n);
-        } else {
-            $nGrams = $this->getNGram($n);
+            return count($this->getNGramUnique($n));
         }
-        return count($nGrams);
-    }
-
-    public function removeStopwords(array $tokens): array
-    {
+        return count($this->getNGram($n));
     }
 }
