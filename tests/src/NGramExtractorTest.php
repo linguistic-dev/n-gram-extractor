@@ -14,9 +14,7 @@ class NGramExtractorTest extends \PHPUnit\Framework\TestCase
         $tokenizer = new Tokenizer();
         $tokenizer->setSeperator('/\s+/');
         // instantiate a extractor object
-        $this->extractor = new NGramExtractor("abc abc def ghi jkl mno pqr");
-        $this->extractor->setTokenizer($tokenizer);
-
+        $this->extractor = new NGramExtractor("abc abc def ghi jkl mno pqr", $tokenizer, array('def'));
         parent::setUp();
     }
 
@@ -25,37 +23,39 @@ class NGramExtractorTest extends \PHPUnit\Framework\TestCase
         $expected_1 = array("abc", "abc", "def", "ghi", "jkl", "mno", "pqr");
         $expected_2 = array("abc abc", "abc def", "def ghi", "ghi jkl", "jkl mno", "mno pqr");
         $expected_3 = array("abc abc def", "abc def ghi", "def ghi jkl", "ghi jkl mno", "jkl mno pqr");
-        self::assertEquals($expected_1, $this->extractor->getNGram(1));
-        self::assertEquals($expected_2, $this->extractor->getNGram(2));
-        self::assertEquals($expected_3, $this->extractor->getNGram(3));
+        self::assertEquals($expected_1, $this->extractor->getNGram(1, false, false));
+        self::assertEquals($expected_2, $this->extractor->getNGram(2, false, false));
+        self::assertEquals($expected_3, $this->extractor->getNGram(3, false, false));
+
+        $expected_4 = array("abc", "abc", "ghi", "jkl", "mno", "pqr");
+        self::assertEquals($expected_4, $this->extractor->getNGram(1, false));
+
+        $expected_5 = array("abc", "ghi", "jkl", "mno", "pqr");
+        self::assertEquals($expected_5, $this->extractor->getNGram(1));
+
+        $expected_6 = array("abc", "def", "ghi", "jkl", "mno", "pqr");
+        self::assertEquals($expected_6, $this->extractor->getNGram(1, true, false));
     }
 
-    public function testRemoveStopwords()
+    public function testGetNGramCount()
     {
-        $this->extractor->setStopwords(array("abc"));
-        self::assertFalse(in_array("abc", $this->extractor->getNGramClean(1)));
+        self::assertTrue(true);
+        $expected_1 = array("abc" => 2, "ghi" => 1, "jkl" => 1, "mno" => 1, "pqr" => 1);
+        self::assertEquals($expected_1, $this->extractor->getNGramCount(1));
 
-        $this->extractor->setStopwords(array("abc abc"));
-        self::assertTrue(in_array("abc abc", $this->extractor->getNGram(2)));
+        $expected_2 = array("abc" => 2, "def" => 1, "ghi" => 1, "jkl" => 1, "mno" => 1, "pqr" => 1);
+        self::assertEquals($expected_2, $this->extractor->getNGramCount(1, false));
+
+        $expected_3 = array("abc abc" => 1, "abc def" => 1, "def ghi" => 1, "ghi jkl" => 1, "jkl mno" => 1, "mno pqr" => 1);
+        self::assertEquals($expected_3, $this->extractor->getNGramCount(2, false));
+
+        $expected_3 = array("abc abc" => 1, "abc ghi" => 1, "ghi jkl" => 1, "jkl mno" => 1, "mno pqr" => 1);
+        self::assertEquals($expected_3, $this->extractor->getNGramCount(2));
     }
 
-    public function testGetNGramUnique()
+    public function testLimitByOccurance()
     {
-        $expected = array("abc", "def", "ghi", "jkl", "mno", "pqr");
-        self::assertEquals($expected, $this->extractor->getNGramUnique(1));
+        self::assertEquals(1, count(NGramExtractor::limitByOccurance($this->extractor->getNGramCount(1), 2)));
+        self::assertEquals(5, count(NGramExtractor::limitByOccurance($this->extractor->getNGramCount(2), 1)));
     }
-
-    public function testGetNGramWordcount()
-    {
-        self::assertEquals(7, $this->extractor->getNGramWordcount(1));
-        self::assertEquals(6, $this->extractor->getNGramWordcount(1, true));
-        self::assertEquals(0, $this->extractor->getNGramWordcount(8));
-    }
-
-    public function testGetNGramUniqueCount()
-    {
-        $nGram = $this->extractor->getNGramUniqueWithCount(1);
-        self::assertEquals(2, $nGram['abc']);
-    }
-
 }

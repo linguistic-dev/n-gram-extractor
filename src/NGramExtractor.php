@@ -6,87 +6,128 @@ use linguistic\NGramExtractor\Tokenizer;
 
 class NGramExtractor
 {
-    private $text;
-    private $tokenizedText;
-    private $nGrams      = array();
-    private $nGramsClean = array();
-    private $stopwords   = array();
-    private $tokenizer;
+    /**
+     * The origin text for ngram extraction
+     *
+     * @var string
+     */
+    protected $text;
 
-    public function __construct($text)
-    {
-        $this->text = mb_strtolower($text);
-    }
+    /**
+     * List of ngrams, indexed by ngram-level
+     *
+     * @var array
+     */
+    protected $nGrams = array();
 
-    public function setStopwords($stopwords)
+    /**
+     * List of stopword tokens
+     *
+     * @var array
+     */
+    protected $stopwords = array();
+
+    /**
+     * Tokenizer instance
+     *
+     * @var Tokenizer
+     */
+    protected $tokenizer;
+
+    /**
+     * Creates a new NGramExtractor
+     *
+     * @param string $text              Text that gets processed
+     * @param Tokenizer $tokenizer      A configured tokenizer object
+     * @param array $stopwords          List of stopword tokens
+     *
+     * @return NGramExtractor
+     */
+    public function __construct($text, Tokenizer $tokenizer, $stopwords)
     {
+        $this->text      = mb_strtolower($text);
         $this->stopwords = $stopwords;
-        return $this;
-    }
-
-    public function getStopwords()
-    {
-        return $this->stopwords;
-    }
-
-    public function setTokenizer(Tokenizer $tokenizer)
-    {
         $this->tokenizer = $tokenizer;
-        return $this;
     }
 
-    public function getNGram($n)
+    /**
+     * Get a list of all ngrams
+     *
+     * @param int $             Tevel of nGrams
+     * @param bool $unique      Removes duplicates if set to true
+     * @param bool $cleaned     Removes stopwords if set to true
+     *
+     * @return array
+     */
+    public function getNGram($n, $unique = true, $cleaned = true)
     {
         if (!array_key_exists($n, $this->nGrams)) {
             $token            = $this->getTokenizedText();
-            $this->nGrams[$n] = $this->createNGram($n, $token);
+            $this->nGrams[$n] = self::createNGram($n, $token);
         }
-        return $this->nGrams[$n];
-    }
-
-    public function getNGramClean($n)
-    {
-        if (!array_key_exists($n, $this->nGramsClean)) {
-            $token                 = $this->getTokenizedText();
-            $cleaned               = array_values(array_diff($token, $this->stopwords));
-            $this->nGramsClean[$n] = $this->createNGram($n, $cleaned);
+        $nGrams = $this->nGrams[$n];
+        if ($cleaned) {
+            $nGrams = $this->getNGramClean($n);
         }
-        return $this->nGramsClean[$n];
-    }
-
-    public function getNGramUnique($n)
-    {
-        $nGrams = $this->getNGram($n);
-        $unique = array_unique($nGrams);
-        return array_values($unique);
-    }
-
-    public function getNGramUniqueWithCount($n)
-    {
-        // echo "halli hallo";
-        $nGrams        = $this->getNGram($n);
-        $nGramsCounted = array_count_values($nGrams);
-        arsort($nGramsCounted);
-        return $nGramsCounted;
-    }
-
-    public function getNGramUniqueWithCountClean($n)
-    {
-        $nGrams        = $this->getNGramClean($n);
-        $nGramsCounted = array_count_values($nGrams);
-        arsort($nGramsCounted);
-        return $nGramsCounted;
-    }
-
-    public function getTokenizedText()
-    {
-        if (!$this->tokenizedText) {
-            $this->tokenizedText = $this->tokenizer->tokenize($this->text);
+        if ($unique) {
+            $nGrams = array_unique($nGrams);
         }
-        return $this->tokenizedText;
+        return array_values($nGrams);
     }
 
-    private function createNGram($n, $token)
+    /**
+     * Get a list of all ngrams reduced to their occurence
+     *
+     * @param int $n            level of ngrams
+     * @param bool $cleaned     removes stopwords if set to true
+     *
+     * @return array
+     */
+    public function getNGramCount($n, $cleaned = true)
+    {
+        $nGrams = array();
+        if ($cleaned) {
+            $nGrams = $this->getNGram($n, false);
+        } else {
+            $nGrams = $this->getNGram($n, false, false);
+        }
+        $nGramCount = array_count_values($nGrams);
+        arsort($nGramCount);
+        return $nGramCount;
+    }
+
+    protected function getNGramClean($n)
+    {
+        $nGrams = $this->getTokenizedText();
+        $token  = array_diff($nGrams, $this->stopwords);
+        $nGrams = self::createNGram($n, array_values($token));
+        return $nGrams;
+    }
+
+    /**
+     * Creates the basic 1-grams, the single tokens of the text
+     *
+     * @return array
+     */
+    protected function getTokenizedText()
+    {
+        if (!array_key_exists(1, $this->nGrams)) {
+            $this->nGrams[1] = $this->tokenizer->tokenize($this->text);
+        }
+        return $this->nGrams[1];
+    }
+
+    /**
+     * Iterates over the single tokens and creates n-grams by a given level
+     *
+     * @static
+     *
+     * @param int $n            level of ngrams
+     * @param array $token      the tokenized document for ngram generations
+     *
+     * @return array
+     */
+    protected static function createNGram($n, $token)
     {
         $nGrams  = array();
         $counter = 0;
@@ -101,14 +142,28 @@ class NGramExtractor
             $nGrams[] = $nGram;
             $counter++;
         }
-        return $nGrams;
+        return array_values($nGrams);
     }
 
-    public function getNGramWordcount($n, $unique = false)
+    /**
+     * Limits counted ngrams by minimum occurance
+     *
+     * @static
+     *
+     * @param array             Array with the ngrams and their occurance
+     * @param int $min          Minimum occurace to pass filter
+     *
+     * @return array
+     */
+    public static function limitByOccurance($countedNGrams, $min)
     {
-        if ($unique) {
-            return count($this->getNGramUnique($n));
+        $limited = array();
+        foreach ($countedNGrams as $nGram => $occurance) {
+            if ($occurance >= $min) {
+                $limited[$nGram] = $occurance;
+            }
         }
-        return count($this->getNGram($n));
+        arsort($limited);
+        return $limited;
     }
 }
