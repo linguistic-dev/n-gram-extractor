@@ -32,4 +32,4 @@ $unigramsFiltered    = NGramExtractor::limitByOccurance($extractor->getNGramCoun
 ```
 ## Ressources
 
-* [Download of stopword lists for different languages]{http://members.unine.ch/jacques.savoy/clef/index.html}
+* [Download of stopword lists for different languages](http://members.unine.ch/jacques.savoy/clef/index.html)
