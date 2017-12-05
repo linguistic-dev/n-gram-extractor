@@ -1,3 +1,5 @@
+# NGramExtractor for PHP
+
 ## Installation
 
 Simple install via Composer:
@@ -30,4 +32,4 @@ $unigramsFiltered    = NGramExtractor::limitByOccurance($extractor->getNGramCoun
 ```
 ## Ressources
 
-* [http://members.unine.ch/jacques.savoy/clef/index.html]{Download of stopword lists for different languages}
+* [Download of stopword lists for different languages]{http://members.unine.ch/jacques.savoy/clef/index.html}
